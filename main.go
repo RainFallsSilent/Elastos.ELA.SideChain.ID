@@ -33,7 +33,7 @@ import (
 const (
 	printStateInterval = 10 * time.Second
 
-	DataPath = "elastos_did"
+	DataPath = "elastos_dataprox"
 	DataDir  = "data"
 	ChainDir = "chain"
 	SpvDir   = "spv"
