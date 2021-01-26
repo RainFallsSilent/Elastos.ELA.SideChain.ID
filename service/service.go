@@ -164,6 +164,39 @@ func (s *HttpService) getTxTime(txid string) (error, uint32) {
 	return nil, header.GetTimeStamp()
 }
 
+func (s *HttpService) GetDIDs(param http.Params) (interface{}, error) {
+	isGetAll, ok := param.Bool("all")
+	if !ok {
+		return nil, http.NewError(int(service.InvalidParams), "all is null")
+	}
+
+	list, err := getAssetUnspents(s.store)
+	if err != nil {
+		return nil, http.NewError(int(service.InvalidParams), "not found")
+	}
+
+	if isGetAll {
+		return list, nil
+	} else {
+		return len(list), nil
+	}
+}
+func getAssetUnspents(s *blockchain.IDChainStore) ([]string, error) {
+	didList := make([]string, 0)
+
+	key := []byte{byte(blockchain.IX_DIDExpiresHeight)}
+	iter := s.NewIterator(key)
+	defer iter.Release()
+	for iter.Next() {
+		keyBytes := iter.Key()
+		didBytes := keyBytes[1:]
+		did := string(didBytes)
+		didList = append(didList, did)
+	}
+
+	return didList, nil
+}
+
 func (s *HttpService) ResolveDID(param http.Params) (interface{}, error) {
 	var didDocState DidDocState
 	didDocState = NonExist
