@@ -175,12 +175,26 @@ func (s *HttpService) GetDIDs(param http.Params) (interface{}, error) {
 		return nil, http.NewError(int(service.InvalidParams), "not found")
 	}
 
+	oldDIDCount := s.store.OldDIDCount
+	memoDIDCount := len(s.store.MemoDIDMap)
+
 	if isGetAll {
-		return list, nil
+		type result struct {
+			OldDIDCount  int
+			NewDIDCount  int
+			MemoDIDCount int
+		}
+
+		return result{
+			OldDIDCount:  oldDIDCount,
+			NewDIDCount:  len(list),
+			MemoDIDCount: memoDIDCount,
+		}, nil
 	} else {
 		return len(list), nil
 	}
 }
+
 func getAssetUnspents(s *blockchain.IDChainStore) ([]string, error) {
 	didList := make([]string, 0)
 

@@ -2,7 +2,9 @@ package blockchain
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -24,6 +26,9 @@ const (
 
 type IDChainStore struct {
 	*blockchain.ChainStore
+	OldDIDCount int
+
+	MemoDIDMap map[string]struct{}
 }
 
 func NewChainStore(genesisBlock *types.Block, dataPath string) (*IDChainStore, error) {
@@ -34,6 +39,7 @@ func NewChainStore(genesisBlock *types.Block, dataPath string) (*IDChainStore, e
 
 	store := &IDChainStore{
 		ChainStore: chainStore,
+		MemoDIDMap: make(map[string]struct{}, 0),
 	}
 
 	store.RegisterFunctions(blockchain.PersistFunction,
@@ -43,6 +49,12 @@ func NewChainStore(genesisBlock *types.Block, dataPath string) (*IDChainStore, e
 	return store, nil
 }
 
+type DIDMemo struct {
+	Sig string `json:"sig"`
+	Pub string `json:"pub"`
+	Msg string `json:"msg"`
+}
+
 func (c *IDChainStore) persistTransactions(batch database.Batch, b *types.Block) error {
 	for _, txn := range b.Transactions {
 		if err := c.PersistTransaction(batch, txn, b.Header.GetHeight()); err != nil {
@@ -50,6 +62,20 @@ func (c *IDChainStore) persistTransactions(batch database.Batch, b *types.Block)
 		}
 
 		switch txn.TxType {
+		case types.TransferAsset:
+			for _, att := range txn.Attributes {
+				if att.Usage != types.Memo {
+					continue
+				}
+				var didMemo DIDMemo
+				err := json.Unmarshal(att.Data, &didMemo)
+				if err != nil {
+					continue
+				}
+				fmt.Println("found memo DID, pub:", didMemo.Pub)
+				c.MemoDIDMap[didMemo.Pub] = struct{}{}
+			}
+
 		case types.RegisterAsset:
 			regPayload := txn.Payload.(*types.PayloadRegisterAsset)
 			if err := c.PersistAsset(batch, txn.Hash(), regPayload.Asset); err != nil {
@@ -63,6 +89,7 @@ func (c *IDChainStore) persistTransactions(batch database.Batch, b *types.Block)
 			}
 			c.PersistMainchainTx(batch, *hash)
 		case id.RegisterIdentification:
+			c.OldDIDCount++
 			regPayload := txn.Payload.(*id.PayloadRegisterIdentification)
 			for _, content := range regPayload.Contents {
 				buf := new(bytes.Buffer)
