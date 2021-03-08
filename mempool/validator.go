@@ -1116,7 +1116,6 @@ func (v *validator) isCustomizedVerifMethodMatch(verificationMethod, issuer stri
 		for _, controller := range controllerArray {
 			if controller == prefixDid {
 				return true
-
 			}
 		}
 	} else if controller, bController := Controller.(string); bController == true {
@@ -1131,29 +1130,10 @@ func isDIDVerifMethodMatch(verificationMethod, ID string) bool {
 	return strings.Contains(verificationMethod, ID)
 }
 
-//// Is VerificationMethod of proof array and ID  matched
-//func (v *validator) isIDsVerifMethodMatch(Proof interface{}, ID string) bool {
-//	//var DIDProofArray []*id.Proof
-//	if DIDProofArray, bDIDProofArray := Proof.([]*id.Proof); bDIDProofArray == true {
-//		for _, proof := range DIDProofArray {
-//			if !v.isIDVerifMethodMatch(proof.VerificationMethod, ID) {
-//				return false
-//			}
-//		}
-//	} else {
-//		return false
-//	}
-//	return true
-//}
-
 func (v *validator) checkDIDAllMethod(ownerDID, issuerID string, credPayload *id.DIDPayload) (*id.Proof, error) {
 	//var DIDProofArray []*id.Proof
 	proof := credPayload.Proof
 	if credPayload.Header.Operation == id.Revoke_Verifiable_Credential_Operation {
-		//如果Proof是数组，在revoke的情况下Proof的签名可以是receiver或者issuer的
-		//receiver或者issuer都即可能是did也可能是短名字
-		//则VerificationMethod指定的应该是issuer的key
-		//receiver或者issuer都即可能是did也可能是短名字
 		verifMethod := proof.VerificationMethod
 		if v.isIDVerifMethodMatch(verifMethod, issuerID) || v.isIDVerifMethodMatch(verifMethod, ownerDID) {
 			return &proof, nil

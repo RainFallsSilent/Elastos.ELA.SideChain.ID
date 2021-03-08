@@ -679,12 +679,10 @@ func getCustomizedDIDVerifiableCredentialTx(id, didDIDPayload string, docBytes [
 
 //issuer.json SelfProclaimedCredential
 func (s *txValidatorTestSuite) TestSelfProclaimedCredential() {
-	//todo
-	return
 	s.SetupSuite()
 	privateKey3Str := "9sYYMSsS2xDbGvSRhNSnMsTbCbF2LPwLovRH93drSetM"
 	id3 := "did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB"
-
+	s.validator.didParam.CustomIDFeeRate = 0
 	//id3DocBytes
 	tx3 := getDIDTx(id3, "create", id3DocByts, privateKey3Str)
 	err3 := s.validator.checkDIDTransaction(tx3, 0, 0)
@@ -740,8 +738,6 @@ func (s *txValidatorTestSuite) TestCustomizedDID() {
 	s.validator.didParam.CustomIDFeeRate = 0
 	err3 := s.validator.checkCustomizedDID(tx3, 0, 0)
 	s.NoError(err3)
-
-	// todo fix me
 }
 
 //issuer.json SelfProclaimedCredential
@@ -770,12 +766,8 @@ func (s *txValidatorTestSuite) TestCustomizedDIDMultSign() {
 	s.validator.didParam.CustomIDFeeRate = 0
 	err := s.validator.checkCustomizedDID(CustomizedDIDTx2, 0, 0)
 	s.NoError(err)
-
-	// todo fix me
-
 }
 
-//todo complete the test
 //self verifiable credential
 func (s *txValidatorTestSuite) Test0DIDVerifiableCredentialTx() {
 	//id1 := "iWFAUYhTa35c1fPe3iCJvihZHx6quumnym"
@@ -907,7 +899,6 @@ func (s *txValidatorTestSuite) TestCustomizedDIDVerifiableCredentialTx2() {
 }
 
 func (s *txValidatorTestSuite) TestDeactivateCustomizedDIDTX() {
-	//todo
 	//////////////////////////////
 	//id1 := "iWFAUYhTa35c1fPe3iCJvihZHx6quumnym"
 	id1 := "did:elastos:iWFAUYhTa35c1fPe3iCJvihZHx6quumnym"
