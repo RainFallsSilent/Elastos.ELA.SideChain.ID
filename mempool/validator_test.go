@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
+
+	//"time"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/stretchr/testify/suite"
@@ -89,6 +92,7 @@ func (s *txValidatorTestSuite) SetupSuite() {
 	cfg.SpvService = spvService
 
 	s.validator = *NewValidator(cfg, idChainStore, &didParams)
+	s.Chain = chain
 }
 
 func TestTxValidatorTest(t *testing.T) {
@@ -250,11 +254,11 @@ func (s *txValidatorTestSuite) TestIDChainStore_CreateDIDTx() {
 
 	info.DIDDoc.Expires = "Mon Jan _2 15:04:05 2006"
 	err = s.validator.checkDIDTransaction(tx, 0, 0)
-	s.Error(err, "invalid Expires")
+	s.Error(err, "invalid Operation")
 
 	info.DIDDoc.Expires = "2006-01-02T15:04:05Z07:00"
 	err = s.validator.checkDIDTransaction(tx, 0, 0)
-	s.Error(err, "invalid Expires")
+	s.Error(err, "invalid Operation")
 
 	info.DIDDoc.Expires = "2018-06-30T12:00:00Z"
 	err = s.validator.checkDIDTransaction(tx, 0, 0)
@@ -270,7 +274,7 @@ func (s *txValidatorTestSuite) TestIDChainStore_CreateDIDTx() {
 
 	tx.Payload = info
 	err = s.validator.checkDIDTransaction(tx, 0, 0)
-	s.Error(err, "invalid Expires")
+	s.Error(err, "invalid Operation")
 }
 
 func (s *txValidatorTestSuite) TestIDChainStore_DeactivateDIDTx() {
@@ -1010,4 +1014,125 @@ func (s *txValidatorTestSuite) TestHeaderPayloadDIDTX() {
 	err2 := s.validator.checkDIDTransaction(txn, 0, 0)
 	s.NoError(err2)
 	fmt.Println("TestHeaderPayloadDIDTX end")
+}
+
+func getLenStr(len int) string {
+	a := make([]byte, len)
+	return string(a)
+}
+
+func (s *txValidatorTestSuite) TestGetLenthString() {
+	strLen := 0
+	str := getLenStr(strLen)
+	s.Equal(strLen, len(str))
+
+	strLen = 1
+	str = getLenStr(strLen)
+	s.Equal(strLen, len(str))
+
+	strLen = 2
+	str = getLenStr(strLen)
+	s.Equal(strLen, len(str))
+
+	strLen = 100
+	str = getLenStr(strLen)
+	s.Equal(strLen, len(str))
+}
+
+func (s *txValidatorTestSuite) TestGetCustomizedDIDLenFactor() {
+	tests := []struct {
+		ID     string
+		factor float64
+	}{
+		{getLenStr(0), 0.3},
+		{getLenStr(1), 6400},
+		{getLenStr(2), 3200},
+		{getLenStr(3), 1200},
+		{getLenStr(4), 99.625},
+		{getLenStr(32), 96.125},
+		{getLenStr(33), 97},
+		{getLenStr(64), 100.875},
+		{getLenStr(65), 300},
+	}
+	for _, test := range tests {
+		lenFactor := getCustomizedDIDLenFactor(test.ID)
+		s.Equal(test.factor, lenFactor)
+	}
+}
+
+func (s *txValidatorTestSuite) TestGetValidPeriodFactor() {
+	tests := []struct {
+		Expires  string
+		lifeRate float64
+	}{
+		{"2021-03-18T17:00:00Z", 0.004464263064434298},
+		{"2021-09-10T17:00:00Z", 0.4866560438863521},
+		{"2021-09-18T17:00:00Z", 0.5085738521055302},
+		{"2022-09-18T17:00:00Z", 1.48172793597281},
+		{"2023-09-18T17:00:00Z", 2.4087175052951446},
+		{"2025-09-18T17:00:00Z", 4.21714693814431},
+	}
+	//1615946015 2021 3-17
+	s.validator.Chain.MedianTimePast = time.Unix(1615946015, 0)
+	for _, test := range tests {
+		lenFactor := s.validator.getValidPeriodFactor(test.Expires)
+		s.Equal(test.lifeRate, lenFactor)
+	}
+}
+
+func (s *txValidatorTestSuite) TestGetOperationFactor() {
+	tests := []struct {
+		Operation string
+		factor    float64
+	}{
+		{"CREATE", 1},
+		{"UPDATE", 0.8},
+		{"TRANSFER", 1.2},
+		{"DEACTIVATE", 0.3},
+		{"DECLARE", 1},
+		{"REVOKE", 0.3},
+		{"DEFUALT_OTHER", 1},
+	}
+	for _, test := range tests {
+		lenFactor := getOperationFactor(test.Operation)
+		s.Equal(test.factor, lenFactor)
+	}
+}
+
+func (s *txValidatorTestSuite) TestGetControllerFactor() {
+	names := []string{"controller1", "controller2"}
+	controller := make([]interface{}, len(names))
+	for i, v := range names {
+		controller[i] = v
+	}
+	str := "controller"
+	tests := []struct {
+		controller interface{}
+		factor     float64
+	}{
+		{nil, 0},
+		{controller, 10},
+		{str, 1},
+	}
+	for _, test := range tests {
+		lenFactor := getControllerFactor(test.controller)
+		s.Equal(test.factor, lenFactor)
+	}
+}
+
+func (s *txValidatorTestSuite) TestGetSizeFactor() {
+	tests := []struct {
+		payLoadSize int
+		factor      float64
+	}{
+		{1000, 1},
+		{1024, 1},
+		{32 * 1024, 1.7525749891599531},
+		{32*1024 + 1, 9.948319375613295},
+		{33 * 1024, 11.699864014373262},
+	}
+	for _, test := range tests {
+		lenFactor := getSizeFactor(test.payLoadSize)
+		s.Equal(test.factor, lenFactor)
+	}
 }

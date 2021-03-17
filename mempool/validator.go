@@ -76,10 +76,10 @@ func (v *validator) checkTransactionPayload(txn *types.Transaction, height uint3
 	switch pld := txn.Payload.(type) {
 	case *types.PayloadRegisterAsset:
 		if pld.Asset.Precision < types.MinPrecision || pld.Asset.Precision > types.MaxPrecision {
-			return errors.New("[ID CheckTransactionPayload] Invalide asset Precision.")
+			return errors.New("[Operation CheckTransactionPayload] Invalide asset Precision.")
 		}
 		if !checkAmountPrecise(pld.Amount, pld.Asset.Precision, types.MaxPrecision) {
-			return errors.New("[ID CheckTransactionPayload] Invalide asset value,out of precise.")
+			return errors.New("[Operation CheckTransactionPayload] Invalide asset value,out of precise.")
 		}
 	case *types.PayloadTransferAsset:
 	case *types.PayloadRecord:
@@ -89,7 +89,7 @@ func (v *validator) checkTransactionPayload(txn *types.Transaction, height uint3
 	case *id.PayloadRegisterIdentification:
 	case *id.DIDPayload:
 	default:
-		return errors.New("[ID CheckTransactionPayload] [txValidator],invalidate transaction payload type.")
+		return errors.New("[Operation CheckTransactionPayload] [txValidator],invalidate transaction payload type.")
 	}
 	return nil
 }
@@ -106,7 +106,7 @@ func (v *validator) checkTransactionOutput(txn *types.Transaction, height uint32
 	// check if output address is valid
 	for _, output := range txn.Outputs {
 		if output.AssetID != v.systemAssetID {
-			return errors.New("[checkTransactionOutput] asset ID in output is invalid")
+			return errors.New("[checkTransactionOutput] asset Operation in output is invalid")
 		}
 
 		if !checkOutputProgramHash(output.ProgramHash) {
@@ -133,17 +133,17 @@ func checkOutputProgramHash(programHash common.Uint168) bool {
 func (v *validator) checkTransactionSignature(txn *types.Transaction, height uint32, mainChainHeight uint32) error {
 	if txn.IsRechargeToSideChainTx() {
 		if err := v.spvService.VerifyTransaction(txn); err != nil {
-			return errors.New("[ID checkTransactionSignature] Invalide recharge to side chain tx: " + err.Error())
+			return errors.New("[Operation checkTransactionSignature] Invalide recharge to side chain tx: " + err.Error())
 		}
 		return nil
 	}
 
 	hashes, err := v.TxProgramHashes(txn)
 	if err != nil {
-		return errors.New("[ID checkTransactionSignature] Get program hashes error:" + err.Error())
+		return errors.New("[Operation checkTransactionSignature] Get program hashes error:" + err.Error())
 	}
 
-	// Add ID program hash to hashes
+	// Add Operation program hash to hashes
 	if id.IsRegisterIdentificationTx(txn) {
 		for _, output := range txn.Outputs {
 			if output.ProgramHash[0] == pact.PrefixRegisterId {
@@ -156,12 +156,12 @@ func (v *validator) checkTransactionSignature(txn *types.Transaction, height uin
 	// Sort first
 	common.SortProgramHashByCodeHash(hashes)
 	if err := mempool.SortPrograms(txn.Programs); err != nil {
-		return errors.New("[ID checkTransactionSignature] Sort program hashes error:" + err.Error())
+		return errors.New("[Operation checkTransactionSignature] Sort program hashes error:" + err.Error())
 	}
 
 	err = mempool.RunPrograms(txn, hashes, txn.Programs)
 	if err != nil {
-		return errors.New("[ID checkTransactionSignature] Run program error:" + err.Error())
+		return errors.New("[Operation checkTransactionSignature] Run program error:" + err.Error())
 	}
 
 	return nil
@@ -201,7 +201,7 @@ func (v *validator) checkVerificationMethodV0(proof *id.Proof,
 				return nil
 			}
 		default:
-			return errors.New("[ID checkVerificationMethodV0] invalid  auth.(type)")
+			return errors.New("[Operation checkVerificationMethodV0] invalid  auth.(type)")
 		}
 	}
 	//if not in Authentication
@@ -222,7 +222,7 @@ func (v *validator) checkVerificationMethodV0(proof *id.Proof,
 			}
 		}
 	}
-	return errors.New("[ID checkVerificationMethodV0] wrong public key by VerificationMethod ")
+	return errors.New("[Operation checkVerificationMethodV0] wrong public key by VerificationMethod ")
 }
 
 func GetDIDAndCompactSymbolFromUri(idURI string) (string, string) {
@@ -681,7 +681,7 @@ func (v *validator) checkVerificationMethodV1(VerificationMethod string,
 			}
 			//didAddress must equal address in DID
 			if didAddress != id.GetDIDFromUri(DIDDoc.ID) {
-				return errors.New("[ID checkVerificationMethodV1] ID and PublicKeyBase58 not match ")
+				return errors.New("[Operation checkVerificationMethodV1] Operation and PublicKeyBase58 not match ")
 			}
 			masterPubKeyVerifyOk = true
 			break
@@ -709,13 +709,13 @@ func (v *validator) checkVerificationMethodV1(VerificationMethod string,
 				return nil
 			}
 		default:
-			return errors.New("[ID checkVerificationMethodV1] invalid  auth.(type)")
+			return errors.New("[Operation checkVerificationMethodV1] invalid  auth.(type)")
 		}
 	}
 	if masterPubKeyVerifyOk {
 		return nil
 	}
-	return errors.New("[ID checkVerificationMethodV1] wrong public key by VerificationMethod ")
+	return errors.New("[Operation checkVerificationMethodV1] wrong public key by VerificationMethod ")
 }
 
 //Proof VerificationMethod must be in DIDDIDDoc Authentication or
@@ -735,7 +735,7 @@ func (v *validator) checkCustomIDVerificationMethod(VerificationMethod string,
 			}
 			//didAddress must equal address in DID
 			if didAddress != id.GetDIDFromUri(DIDDoc.ID) {
-				return errors.New("[ID checkVerificationMethodV1] ID and PublicKeyBase58 not match ")
+				return errors.New("[Operation checkVerificationMethodV1] Operation and PublicKeyBase58 not match ")
 			}
 			pubkeyCount++
 			break
@@ -763,13 +763,13 @@ func (v *validator) checkCustomIDVerificationMethod(VerificationMethod string,
 				pubkeyCount++
 			}
 		default:
-			return errors.New("[ID checkVerificationMethodV1] invalid  auth.(type)")
+			return errors.New("[Operation checkVerificationMethodV1] invalid  auth.(type)")
 		}
 	}
 	if pubkeyCount == 1 {
 		return nil
 	}
-	return errors.New("[ID checkVerificationMethodV1] wrong public key by VerificationMethod ")
+	return errors.New("[Operation checkVerificationMethodV1] wrong public key by VerificationMethod ")
 }
 
 func (v *validator) GetLastDIDTxData(issuerDID string) (*id.DIDTransactionData, error) {
@@ -841,12 +841,12 @@ func (v *validator) getCredentialIssuer(DID string, cridential *id.VerifiableCre
 	Brief introduction:
 		1, get public from Issuer2, verify credential sign
 	Details:
-		1，Traverse each credential, if Issuer is an empty string, use the ID in CredentialSubject,
+		1，Traverse each credential, if Issuer is an empty string, use the Operation in CredentialSubject,
 			if it is still an empty string, use the outermost DID, indicating that it is a self-declared Credential
 		2, if Issuer is not empty string, get Issuer public key from db，
-	       if Issuer is not exist  check if realIssuer is ID,
+	       if Issuer is not exist  check if realIssuer is Operation,
            if so get public key from Authentication or PublicKey
-        3, verify credential sign. if ID is compact format must Completion ID
+        3, verify credential sign. if Operation is compact format must Completion Operation
 */
 func (v *validator) checkVerifiableCredentials(ID string, VerifiableCredential []id.VerifiableCredential,
 	Authentication []interface{}, PublicKey []id.DIDPublicKeyInfo, controller interface{}) error {
@@ -1258,7 +1258,7 @@ func (v *validator) checkDeclareVerifiableCredential(payload *id.DIDPayload) err
 	////todo check expires
 
 	// if it is "create" use now m/n and public key otherwise use last time m/n and public key
-	// get credential target ID , Authentication , PublicKey, m,n of multisign   (isDID/customized did)
+	// get credential target Operation , Authentication , PublicKey, m,n of multisign   (isDID/customized did)
 	//
 	isDID := v.isResiteredDID(receiverID)
 	if isDID {
@@ -1328,7 +1328,7 @@ func (v *validator) checkCustomIDTicketProof(ticketProofArray []*id.TicketProof,
 	//3, proof multisign verify
 	for _, ticketProof := range ticketProofArray {
 		//get  public key
-		//publicKeyBase58, _ := v.getPublicKeyByVerificationMethod(ticketProof.VerificationMethod, verifyDoc.ID,
+		//publicKeyBase58, _ := v.getPublicKeyByVerificationMethod(ticketProof.VerificationMethod, verifyDoc.Operation,
 		//	verifyDoc.PublicKey, verifyDoc.Authentication, verifyDoc.Controller)
 		//
 		publicKeyBase58, _ := v.getAuthenPublicKey(ticketProof.VerificationMethod, isDID,
@@ -1452,13 +1452,13 @@ func (v *validator) checkCustomizedDIDAvailable(cPayload *id.DIDPayload) error {
 						}
 					}
 					if invalidProofCount == 0 {
-						return errors.New("there is no signature of custom ID")
+						return errors.New("there is no signature of custom Operation")
 					} else if invalidProofCount > 1 {
-						return errors.New("there is duplicated signature of custom ID")
+						return errors.New("there is duplicated signature of custom Operation")
 					}
 				} else if proof, ok := cPayload.DIDDoc.Proof.(*id.DocProof); ok {
 					if !strings.Contains(proof.Creator, rcDID) {
-						return errors.New("there is no signature of custom ID")
+						return errors.New("there is no signature of custom Operation")
 					}
 				} else {
 					//error
@@ -1475,7 +1475,7 @@ func (v *validator) checkTicketAvailable(cPayload *id.DIDPayload,
 	customID string, lastTxHash string, N int, verifyDoc *id.DIDDoc) error {
 	// check customID
 	if cPayload.Ticket.CustomID != customID {
-		return errors.New("invalid ID in ticket")
+		return errors.New("invalid Operation in ticket")
 	}
 
 	// 'to' need exist in controller
@@ -1620,15 +1620,30 @@ func getCustomizedDIDLenFactor(ID string) float64 {
 	}
 }
 
+func getDays(t1, t2 time.Time) int64 {
+	t1Unix := t1.Unix()
+	t2Unix := t2.Unix()
+	return (t1Unix - t2Unix) / (24 * 3600)
+}
+
+func getYears(t1, t2 time.Time) float64 {
+	t1Unix := t1.Unix()
+	t2Unix := t2.Unix()
+	return float64(t1Unix-t2Unix) / (365 * 24 * 3600)
+}
+
 func (v *validator) getValidPeriodFactor(Expires string) float64 {
 
 	expiresTime, _ := time.Parse(time.RFC3339, Expires)
-	days := expiresTime.Day() - v.Chain.MedianTimePast.Day()
+	days := getDays(expiresTime, v.Chain.MedianTimePast)
+	fmt.Println("days", days)
 	if days < 180 {
 		expiresTime.Add(180 * 24 * time.Hour)
 	}
 
-	years := float64(expiresTime.Year() - v.Chain.MedianTimePast.Year())
+	years := getYears(expiresTime, v.Chain.MedianTimePast)
+	fmt.Println("years ", years)
+	//fmt.Printf("years %f, expiresYear %d, MedianTimeYear %d \n", years, expiresYear, MedianTimeYear)
 
 	if years <= 0 {
 		return 1
@@ -1639,6 +1654,8 @@ func (v *validator) getValidPeriodFactor(Expires string) float64 {
 	} else {
 		lifeRate = float64(years * ((100 - 3*math.Log2(years)) / 100))
 	}
+	fmt.Println("lifeRate", lifeRate)
+
 	return lifeRate
 
 }
@@ -1693,7 +1710,7 @@ func getControllerFactor(controller interface{}) float64 {
 }
 
 //Payload
-//ID  Expires Controller Operation Payload interface
+//Operation  Operation Controller Operation Payload interface
 func (v *validator) getIDTxFee(customID, expires, operation string, controller interface{}, payloadLen int) common.Fixed64 {
 	//A id lenght
 	A := getCustomizedDIDLenFactor(customID)
@@ -1723,7 +1740,7 @@ func (v *validator) checkCustomizedDID(txn *types.Transaction, height uint32, ma
 		return errors.New("invalid DIDPayload")
 	}
 
-	// check Custom ID available?
+	// check Custom Operation available?
 	if err := v.checkCustomizedDIDAvailable(customizedDIDPayload); err != nil {
 		return err
 	}
@@ -1733,10 +1750,10 @@ func (v *validator) checkCustomizedDID(txn *types.Transaction, height uint32, ma
 		return err
 	}
 
-	//check Expires must be  format RFC3339
+	//check Operation must be  format RFC3339
 	_, err := time.Parse(time.RFC3339, customizedDIDPayload.DIDDoc.Expires)
 	if err != nil {
-		return errors.New("invalid Expires")
+		return errors.New("invalid Operation")
 	}
 	//if this customized did is already exist operation should not be create
 	//if this customized did is not exist operation should not be update
@@ -1891,7 +1908,7 @@ func (v *validator) checkRegisterDID(txn *types.Transaction, height uint32, main
 	}
 	_, err := time.Parse(time.RFC3339, p.DIDDoc.Expires)
 	if err != nil {
-		return errors.New("invalid Expires")
+		return errors.New("invalid Operation")
 	}
 
 	//check txn fee
