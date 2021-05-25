@@ -125,10 +125,12 @@ const (
 )
 
 var (
-	id1DocByts     []byte
-	id11DocByts    []byte
-	idUser1DocByts []byte
-	idUser2DocByts []byte
+	id1DocByts       []byte
+	id11DocByts      []byte
+	idUser1DocByts   []byte
+	idUser2DocByts   []byte
+	idUser1HPDocByts []byte
+	idUser2HPDocByts []byte
 
 	id2DocByts                      []byte
 	id3DocByts                      []byte
@@ -148,6 +150,8 @@ func init() {
 	id11DocByts, _ = types.LoadJsonData("./testdata/issuer.id.json")
 	idUser1DocByts, _ = types.LoadJsonData("./testdata/user1.id.json")
 	idUser2DocByts, _ = types.LoadJsonData("./testdata/user2.id.json")
+	idUser1HPDocByts, _ = types.LoadJsonData("./testdata/user1.id.hp.json")
+	idUser2HPDocByts, _ = types.LoadJsonData("./testdata/user2.id.hp.json")
 
 	id2DocByts, _ = types.LoadJsonData("./testdata/issuer.compact.json")
 	id3DocByts, _ = types.LoadJsonData("./testdata/issuer.json")
@@ -426,8 +430,10 @@ func randomString() string {
 
 func getPayloadDIDInfo(id string, didDIDPayload string, docBytes []byte, privateKeyStr string) *types.DIDPayload {
 	//pBytes := getDIDPayloadBytes(id)
+	fmt.Println(" docBytes ", string(docBytes))
 	info := new(types.DIDDoc)
 	json.Unmarshal(docBytes, info)
+
 	p := &types.DIDPayload{
 		Header: types.Header{
 			Specification: "elastos/did/1.0",
@@ -441,6 +447,41 @@ func getPayloadDIDInfo(id string, didDIDPayload string, docBytes []byte, private
 		DIDDoc: info,
 	}
 	privateKey1 := base58.Decode(privateKeyStr)
+	sign, _ := crypto.Sign(privateKey1, p.GetData())
+	p.Proof.Signature = base64url.EncodeToString(sign)
+	return p
+}
+
+func getPayloadDIDInfoChangeDoc(id string, didDIDPayload string, docBytes []byte, privateKeyStr string) *types.DIDPayload {
+	//pBytes := getDIDPayloadBytes(id)
+	privateKey1 := base58.Decode(privateKeyStr)
+
+	fmt.Println(" docBytes  before chg", string(docBytes))
+	info := new(types.DIDDoc)
+	json.Unmarshal(docBytes, info)
+	docProof := &types.DocProof{}
+	if err := Unmarshal(info.Proof, docProof); err != nil {
+		panic("error should not be here")
+	}
+	signDocProof, _ := crypto.Sign(privateKey1, info.GetData())
+	docProof.SignatureValue = base64url.EncodeToString(signDocProof)
+	info.Proof = docProof
+
+	fmt.Println(" docBytes after chg", string(info.GetData()))
+
+	p := &types.DIDPayload{
+		Header: types.Header{
+			Specification: "elastos/did/1.0",
+			Operation:     didDIDPayload,
+		},
+		Payload: base64url.EncodeToString(info.GetData()),
+		Proof: types.Proof{
+			Type:               "ECDSAsecp256r1",
+			VerificationMethod: "did:elastos:" + id + "#primary", //primary
+		},
+		DIDDoc: info,
+	}
+
 	sign, _ := crypto.Sign(privateKey1, p.GetData())
 	p.Proof.Signature = base64url.EncodeToString(sign)
 	return p
@@ -595,6 +636,16 @@ func getDIDTx(id, didDIDPayload string, docBytes []byte, privateKeyStr string) *
 }
 
 //didDIDPayload must be create or update
+func getDIDTxChdDoc(id, didDIDPayload string, docBytes []byte, privateKeyStr string) *types2.Transaction {
+
+	payloadDidInfo := getPayloadDIDInfoChangeDoc(id, didDIDPayload, docBytes, privateKeyStr)
+	txn := new(types2.Transaction)
+	txn.TxType = types.DIDOperation
+	txn.Payload = payloadDidInfo
+	return txn
+}
+
+//didDIDPayload must be create or update
 func getCustomizedDIDTx(id, didDIDPayload string, docBytes []byte, privateKeyStr string) *types2.Transaction {
 
 	payloadDidInfo := getCustomizedDIDDoc(id, didDIDPayload, docBytes, privateKeyStr)
@@ -719,12 +770,21 @@ func (s *txValidatorTestSuite) TestCheckRegisterDID() {
 	s.NoError(err2)
 }
 
-func (s *txValidatorTestSuite) GetprivateKeyStr() string {
-	privateKey1Str := "xprvA39XqfTw2FPEfpMJmM6jK1gzzRv8p1GYJS3DUEEbp1SibLrRyZzHijYTTvzy2a57Es8CBxs2xseMNoLC7nNGxsJY3nfCT3aUeozRQoy8vTH"
+func (s *txValidatorTestSuite) GetprivateKeyStr(privateKey1Str string) string {
+	//privateKey1Str := "xprvA39XqfTw2FPEfpMJmM6jK1gzzRv8p1GYJS3DUEEbp1SibLrRyZzHijYTTvzy2a57Es8CBxs2xseMNoLC7nNGxsJY3nfCT3aUeozRQoy8vTH"
 	privateKeyTemp := base58.Decode(privateKey1Str)
 	privateKey := privateKeyTemp[46:78]
 	base58PrivageKey := base58.Encode(privateKey)
 	return base58PrivageKey
+}
+
+func (s *txValidatorTestSuite) TestGetPrivateKeyStr() {
+
+	user1PrivateKey := s.GetprivateKeyStr("xprvA39XqfTw2FPEjJK4n4XkDomsf2wnTD4n6nZgSm34Da9MosYtFNStyTGRpZU5aRyxpfJ98oK8Yw5GuBnP1Bx7oCrZB9BhWXR28orHW6A5QRn")
+	fmt.Println(" user1PrivateKey 3z2QFDJE7woSUzL6az9sCB1jkZtzfvEZQtUnYVgQEebS ", user1PrivateKey)
+
+	user2PrivateKey := s.GetprivateKeyStr("xprvA39XqfTw2FPEnHs4A7H9DRDxxGn7dJpyTdxHqUmBthNFhPAJGATFNdL8wBFZ1NHkC6USNWyEchycKkD3RoT7tPSfugBQVyyPNH3mrEP8KUy")
+	fmt.Println(" user2PrivateKey AqBB8Uur4QwwBtFPeA2Yd5yF2Ni45gyz2osfFcMcuP7J ", user2PrivateKey)
 }
 
 func (s *txValidatorTestSuite) TestCustomizedDID() {
@@ -746,15 +806,28 @@ func (s *txValidatorTestSuite) TestCustomizedDID() {
 
 //issuer.json SelfProclaimedCredential
 func (s *txValidatorTestSuite) TestCustomizedDIDMultSign() {
-	idUser1 := "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y"
-	privateKeyUser1Str := "3z2QFDJE7woSUzL6az9sCB1jkZtzfvEZQtUnYVgQEebS"
-	tx1 := getDIDTx(idUser1, "create", idUser1DocByts, privateKeyUser1Str)
-
+	id1 := "did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj"
+	privateKey1Str := "413uivqLEMjPd8bo42K9ic6VXpgYcJLEwB3vefxJDhXJ" //413uivqLEMjPd8bo42K9ic6VXpgYcJLEwB3vefxJDhXJ
+	tx1 := getDIDTx(id1, "create", id11DocByts, privateKey1Str)
 	batch := s.validator.Store.NewBatch()
-	err1 := s.validator.Store.PersistRegisterDIDTx(batch, []byte(idUser1), tx1,
+	err1 := s.validator.Store.PersistRegisterDIDTx(batch, []byte(id1), tx1,
 		100, 123456)
 	s.NoError(err1)
 	batch.Commit()
+
+	idUser1 := "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y"
+	privateKeyUser1Str := "3z2QFDJE7woSUzL6az9sCB1jkZtzfvEZQtUnYVgQEebS"
+	s.validator.didParam.CustomIDFeeRate = 0
+
+	tx0 := getDIDTx(idUser1, "create", idUser1DocByts, privateKeyUser1Str)
+	err3 := s.validator.checkDIDTransaction(tx0, 0, 0)
+	s.NoError(err3)
+
+	batch0 := s.validator.Store.NewBatch()
+	err0 := s.validator.Store.PersistRegisterDIDTx(batch, []byte(idUser1), tx1,
+		100, 123456)
+	s.NoError(err0)
+	batch0.Commit()
 
 	privateKeyUser2Str := "AqBB8Uur4QwwBtFPeA2Yd5yF2Ni45gyz2osfFcMcuP7J"
 	idUser2 := "did:elastos:idwuEMccSpsTH4ZqrhuHqg6y8XMVQAsY5g"
@@ -765,11 +838,10 @@ func (s *txValidatorTestSuite) TestCustomizedDIDMultSign() {
 	s.NoError(err2)
 	batch2.Commit()
 
-	CustomizedDIDTx2 := getCustomizedDIDTxMultSign(idUser1, idUser2, "create", customizedDIDDocBytes2,
-		privateKeyUser1Str, privateKeyUser2Str)
-	s.validator.didParam.CustomIDFeeRate = 0
-	err := s.validator.checkCustomizedDID(CustomizedDIDTx2, 0, 0)
-	s.NoError(err)
+	//CustomizedDIDTx2 := getCustomizedDIDTxMultSign(idUser1, idUser2, "create", customizedDIDDocBytes2,
+	//	privateKeyUser1Str, privateKeyUser2Str)
+	//err := s.validator.checkCustomizedDID(CustomizedDIDTx2, 0, 0)
+	//s.NoError(err)
 }
 
 //self verifiable credential
@@ -1014,6 +1086,53 @@ func (s *txValidatorTestSuite) TestHeaderPayloadDIDTX() {
 	err2 := s.validator.checkDIDTransaction(txn, 0, 0)
 	s.NoError(err2)
 	fmt.Println("TestHeaderPayloadDIDTX end")
+}
+
+func (s *txValidatorTestSuite) TestDynamicDoc() {
+	id1 := "did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj"
+	privateKey1Str := "413uivqLEMjPd8bo42K9ic6VXpgYcJLEwB3vefxJDhXJ" //413uivqLEMjPd8bo42K9ic6VXpgYcJLEwB3vefxJDhXJ
+	tx1 := getDIDTx(id1, "create", id11DocByts, privateKey1Str)
+	batch := s.validator.Store.NewBatch()
+	err1 := s.validator.Store.PersistRegisterDIDTx(batch, []byte(id1), tx1,
+		100, 123456)
+	s.NoError(err1)
+	batch.Commit()
+
+	idUser1 := "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y"
+	//3z2QFDJE7woSUzL6az9sCB1jkZtzfvEZQtUnYVgQEebS
+	privateKeyUser1Str := "3z2QFDJE7woSUzL6az9sCB1jkZtzfvEZQtUnYVgQEebS"
+	s.validator.didParam.CustomIDFeeRate = 0
+
+	tx0 := getDIDTxChdDoc(idUser1, "create", idUser1DocByts, privateKeyUser1Str)
+	err3 := s.validator.checkDIDTransaction(tx0, 0, 0)
+	s.NoError(err3)
+
+	//txMyChangDOC := getDIDTxChdDoc(idUser1, "create", idUser1HPDocByts, privateKeyUser1Str)
+	//err4 := s.validator.checkDIDTransaction(txMyChangDOC, 0, 0)
+	//s.NoError(err4)
+}
+
+func (s *txValidatorTestSuite) TestDynamicDoc2() {
+
+	s.validator.didParam.CustomIDFeeRate = 0
+	//AqBB8Uur4QwwBtFPeA2Yd5yF2Ni45gyz2osfFcMcuP7J
+	//privateKeyUser2Str := "AqBB8Uur4QwwBtFPeA2Yd5yF2Ni45gyz2osfFcMcuP7J"
+	privateKeyUser2Str := "AqBB8Uur4QwwBtFPeA2Yd5yF2Ni45gyz2osfFcMcuP7J"
+
+	idUser2 := "did:elastos:idwuEMccSpsTH4ZqrhuHqg6y8XMVQAsY5g"
+	tx2 := getDIDTx(idUser2, "create", idUser2DocByts, privateKeyUser2Str)
+	batch2 := s.validator.Store.NewBatch()
+	err2 := s.validator.Store.PersistRegisterDIDTx(batch2, []byte(idUser2), tx2,
+		100, 123456)
+	s.NoError(err2)
+	batch2.Commit()
+
+	err2 = s.validator.checkDIDTransaction(tx2, 0, 0)
+	s.NoError(err2)
+
+	txMyChangDOC := getDIDTxChdDoc(idUser2, "create", idUser2HPDocByts, privateKeyUser2Str)
+	err4 := s.validator.checkDIDTransaction(txMyChangDOC, 0, 0)
+	s.NoError(err4)
 }
 
 func getLenStr(len int) string {

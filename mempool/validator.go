@@ -1901,6 +1901,50 @@ func (v *validator) checkDIDTransaction(txn *types.Transaction, height uint32, m
 	return errors.New("invalid Operation")
 }
 
+//3, proof multisign verify
+func (v *validator) checkDIDInnerProof(DIDProofArray []*id.DocProof, iDateContainer interfaces.IDataContainer,
+	N int, verifyDoc *id.DIDDoc) error {
+	verifyOkCount := 0
+	//3, proof multisign verify
+	for _, CustomizedDIDProof := range DIDProofArray {
+		//get  public key
+		publicKeyBase58, _ := v.getDefaultPublicKey(CustomizedDIDProof.Creator, true, verifyDoc.PublicKey,
+			verifyDoc.Authentication, verifyDoc.Controller)
+		if publicKeyBase58 == "" {
+			return errors.New("checkCustomIDInnerProof Not find proper publicKeyBase58")
+		}
+		//get code
+		//var publicKeyByte []byte
+		publicKeyByte := base58.Decode(publicKeyBase58)
+
+		//var code []byte
+		code, err := id.GetCodeByPubKey(publicKeyByte)
+		if err != nil {
+			return err
+		}
+		signature, _ := base64url.DecodeString(CustomizedDIDProof.SignatureValue)
+
+		var success bool
+		fmt.Println("checkDIDInnerProof publicKeyBase58 ", publicKeyBase58)
+		fmt.Println("checkDIDInnerProof signature ", CustomizedDIDProof.SignatureValue)
+		fmt.Println("checkDIDInnerProof data ", string(iDateContainer.GetData()))
+
+		success, err = id.VerifyByVM(iDateContainer, code, signature)
+
+		if err != nil {
+			return err
+		}
+		if !success {
+			return errors.New("[VM] Check Sig FALSE")
+		}
+		verifyOkCount++
+	}
+	if verifyOkCount < N {
+		return errors.New("[VM] Check Sig FALSE verifyOkCount < N")
+	}
+	return nil
+}
+
 func (v *validator) checkRegisterDID(txn *types.Transaction, height uint32, mainChainHeight uint32) error {
 	p, ok := txn.Payload.(*id.DIDPayload)
 	if !ok {
@@ -1964,6 +2008,17 @@ func (v *validator) checkRegisterDID(txn *types.Transaction, height uint32, main
 			doc.Authentication, doc.PublicKey, nil); err != nil {
 			return err
 		}
+	}
+
+	DIDProofArray, err := v.getDocProof(p.DIDDoc.Proof)
+	if err != nil {
+		return err
+	}
+
+	var verifyDoc *id.DIDDoc
+	verifyDoc = p.DIDDoc
+	if err = v.checkDIDInnerProof(DIDProofArray, verifyDoc.DIDPayloadData, 1, verifyDoc); err != nil {
+		return err
 	}
 	return nil
 }
