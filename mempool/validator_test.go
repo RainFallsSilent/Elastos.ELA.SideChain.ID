@@ -131,6 +131,7 @@ var (
 	idUser2DocByts   []byte
 	idUser1HPDocByts []byte
 	idUser2HPDocByts []byte
+	idUser2MyDocByts []byte
 
 	id2DocByts                      []byte
 	id3DocByts                      []byte
@@ -152,6 +153,7 @@ func init() {
 	idUser2DocByts, _ = types.LoadJsonData("./testdata/user2.id.json")
 	idUser1HPDocByts, _ = types.LoadJsonData("./testdata/user1.id.hp.json")
 	idUser2HPDocByts, _ = types.LoadJsonData("./testdata/user2.id.hp.json")
+	idUser2MyDocByts, _ = types.LoadJsonData("./testdata/user2.id.my.json")
 
 	id2DocByts, _ = types.LoadJsonData("./testdata/issuer.compact.json")
 	id3DocByts, _ = types.LoadJsonData("./testdata/issuer.json")
@@ -533,7 +535,7 @@ func getPayloadDIDInfoChangeDoc(id string, didDIDPayload string, docBytes []byte
 		Payload: base64url.EncodeToString(info.GetData()),
 		Proof: types.Proof{
 			Type:               "ECDSAsecp256r1",
-			VerificationMethod: "did:elastos:" + id + "#primary", //primary
+			VerificationMethod: id + "#primary", //primary
 		},
 		DIDDoc: info,
 	}
@@ -1168,7 +1170,20 @@ func (s *txValidatorTestSuite) TestDynamicDoc() {
 	//s.NoError(err4)
 }
 
-func (s *txValidatorTestSuite) TestDynamicDoc2() {
+func outputPayloadToFile(payload types2.Payload, filename string) {
+	b11, err := json.Marshal(payload)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	dest, err := os.Create(filename)
+	if err != nil {
+		return
+	}
+	defer dest.Close()
+	dest.Write(b11)
+}
+
+func (s *txValidatorTestSuite) TestChangDocAndSaveToJson() {
 
 	s.validator.didParam.CustomIDFeeRate = 0
 	//AqBB8Uur4QwwBtFPeA2Yd5yF2Ni45gyz2osfFcMcuP7J
@@ -1189,6 +1204,29 @@ func (s *txValidatorTestSuite) TestDynamicDoc2() {
 	txMyChangDOC := getDIDTxChdDoc(idUser2, "create", idUser2HPDocByts, privateKeyUser2Str)
 	err4 := s.validator.checkDIDTransaction(txMyChangDOC, 0, 0)
 	s.NoError(err4)
+	outputPayloadToFile(txMyChangDOC.Payload, "user2.id.my.json")
+}
+
+func (s *txValidatorTestSuite) TestMyChandDoc() {
+	fmt.Println("TestHeaderPayloadDIDTX begin")
+
+	operation := new(types.DIDPayload)
+	json.Unmarshal(idUser2MyDocByts, operation)
+	fmt.Printf("%+v \n", *operation)
+
+	decodePayload, err := base64url.DecodeString(operation.Payload)
+	s.NoError(err)
+
+	info := new(types.DIDDoc)
+	json.Unmarshal(decodePayload, info)
+	operation.DIDDoc = info
+	txn := new(types2.Transaction)
+	txn.TxType = types.DIDOperation
+	txn.Payload = operation
+	s.validator.didParam.CustomIDFeeRate = 0
+	err2 := s.validator.checkDIDTransaction(txn, 0, 0)
+	s.NoError(err2)
+	fmt.Println("TestHeaderPayloadDIDTX end")
 }
 
 func getLenStr(len int) string {
