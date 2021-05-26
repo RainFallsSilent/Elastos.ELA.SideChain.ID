@@ -125,13 +125,13 @@ const (
 )
 
 var (
-	id1DocByts       []byte
-	id11DocByts      []byte
-	idUser1DocByts   []byte
-	idUser2DocByts   []byte
-	idUser1HPDocByts []byte
-	idUser2HPDocByts []byte
-	idUser2MyDocByts []byte
+	id1DocByts        []byte
+	id11DocByts       []byte
+	idUser1DocByts    []byte
+	idUser2DocByts    []byte
+	idUser1HPDocByts  []byte
+	idUser2HPDocByts  []byte
+	idUser2SrcDocByts []byte
 
 	id2DocByts                      []byte
 	id3DocByts                      []byte
@@ -153,7 +153,7 @@ func init() {
 	idUser2DocByts, _ = types.LoadJsonData("./testdata/user2.id.json")
 	idUser1HPDocByts, _ = types.LoadJsonData("./testdata/user1.id.hp.json")
 	idUser2HPDocByts, _ = types.LoadJsonData("./testdata/user2.id.hp.json")
-	idUser2MyDocByts, _ = types.LoadJsonData("./testdata/user2.id.my.json")
+	idUser2SrcDocByts, _ = types.LoadJsonData("./testdata/user2.src.doc.json")
 
 	id2DocByts, _ = types.LoadJsonData("./testdata/issuer.compact.json")
 	id3DocByts, _ = types.LoadJsonData("./testdata/issuer.json")
@@ -1183,7 +1183,7 @@ func outputPayloadToFile(payload types2.Payload, filename string) {
 	dest.Write(b11)
 }
 
-func (s *txValidatorTestSuite) TestChangDocAndSaveToJson() {
+func (s *txValidatorTestSuite) TestChangUser2DocAndSaveToJson() {
 
 	s.validator.didParam.CustomIDFeeRate = 0
 	//AqBB8Uur4QwwBtFPeA2Yd5yF2Ni45gyz2osfFcMcuP7J
@@ -1198,17 +1198,17 @@ func (s *txValidatorTestSuite) TestChangDocAndSaveToJson() {
 	s.NoError(err2)
 	batch2.Commit()
 
-	txMyChangDOC := getDIDTxChdDoc(idUser2, "create", idUser2HPDocByts, privateKeyUser2Str)
+	txMyChangDOC := getDIDTxChdDoc(idUser2, "create", idUser2SrcDocByts, privateKeyUser2Str)
 	err4 := s.validator.checkDIDTransaction(txMyChangDOC, 0, 0)
 	s.NoError(err4)
-	outputPayloadToFile(txMyChangDOC.Payload, "user2.id.my.json")
+	outputPayloadToFile(txMyChangDOC.Payload, "user2.dest.payload.json")
 }
 
 func (s *txValidatorTestSuite) TestMyChandDoc() {
 	fmt.Println("TestHeaderPayloadDIDTX begin")
 
 	operation := new(types.DIDPayload)
-	json.Unmarshal(idUser2MyDocByts, operation)
+	json.Unmarshal(idUser2SrcDocByts, operation)
 	fmt.Printf("%+v \n", *operation)
 
 	decodePayload, err := base64url.DecodeString(operation.Payload)
