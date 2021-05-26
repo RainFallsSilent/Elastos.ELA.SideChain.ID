@@ -1198,9 +1198,6 @@ func (s *txValidatorTestSuite) TestChangDocAndSaveToJson() {
 	s.NoError(err2)
 	batch2.Commit()
 
-	//err2 = s.validator.checkDIDTransaction(tx2, 0, 0)
-	//s.NoError(err2)
-
 	txMyChangDOC := getDIDTxChdDoc(idUser2, "create", idUser2HPDocByts, privateKeyUser2Str)
 	err4 := s.validator.checkDIDTransaction(txMyChangDOC, 0, 0)
 	s.NoError(err4)
