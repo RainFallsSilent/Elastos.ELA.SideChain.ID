@@ -450,7 +450,7 @@ func getPayloadDIDInfo(id string, didDIDPayload string, docBytes []byte, private
 		err = crypto.Verify(*pubkey, info.GetData(), sign)
 		fmt.Println("getPayloadDIDInfo Verify 1111", err)
 	}
-	/////////////////////////
+	///////////////////////
 	p := &types.DIDPayload{
 		Header: types.Header{
 			Specification: "elastos/did/1.0",
@@ -498,7 +498,9 @@ func getPayloadDIDInfoChangeDoc(id string, didDIDPayload string, docBytes []byte
 			panic("error should not be here")
 		}
 		docProof.SignatureValue = base64url.EncodeToString(sign)
-		publickey := base58.Decode("kTYQhMtoimm9wV3vy4q9EVy4Z1WxRqxhvngztdGo1Dmc")
+		//user1 pubkey vMYSz32qbWsNeDJpKsuuMaFsiApuZMz9XVy9DmEwysWg
+		//user2 pubkey kTYQhMtoimm9wV3vy4q9EVy4Z1WxRqxhvngztdGo1Dmc
+		publickey := base58.Decode("vMYSz32qbWsNeDJpKsuuMaFsiApuZMz9XVy9DmEwysWg")
 		pubkey, err := crypto.DecodePoint(publickey)
 		fmt.Println(err)
 		fmt.Println("1111111 public key ", "kTYQhMtoimm9wV3vy4q9EVy4Z1WxRqxhvngztdGo1Dmc")
