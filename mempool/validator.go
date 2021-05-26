@@ -2017,7 +2017,7 @@ func (v *validator) checkRegisterDID(txn *types.Transaction, height uint32, main
 
 	var verifyDoc *id.DIDDoc
 	verifyDoc = p.DIDDoc
-	if err = v.checkDIDInnerProof(DIDProofArray, verifyDoc, 1, verifyDoc); err != nil {
+	if err = v.checkDIDInnerProof(DIDProofArray, verifyDoc.DIDPayloadData, 1, verifyDoc); err != nil {
 		return err
 	}
 	return nil

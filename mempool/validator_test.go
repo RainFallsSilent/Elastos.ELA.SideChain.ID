@@ -490,7 +490,7 @@ func getPayloadDIDInfoChangeDoc(id string, didDIDPayload string, docBytes []byte
 
 	{
 		privateKey1 := base58.Decode(privateKeyStr)
-		sign, _ := crypto.Sign(privateKey1, info.GetData())
+		sign, _ := crypto.Sign(privateKey1, info.DIDPayloadData.GetData())
 		docProof := &types.DocProof{}
 		if err := Unmarshal(info.Proof, docProof); err != nil {
 			panic("error should not be here")
@@ -503,7 +503,7 @@ func getPayloadDIDInfoChangeDoc(id string, didDIDPayload string, docBytes []byte
 		fmt.Println("1111111 SignatureValue ", docProof.SignatureValue)
 		fmt.Println("1111111 info.GetData()", string(info.GetData()))
 		//info.Proof = docProof
-		err = crypto.Verify(*pubkey, info.GetData(), sign)
+		err = crypto.Verify(*pubkey, info.DIDPayloadData.GetData(), sign)
 		fmt.Println("getPayloadDIDInfo Verify 1111", err)
 		info.Proof = docProof
 	}
