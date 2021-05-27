@@ -1148,7 +1148,7 @@ func (s *txValidatorTestSuite) TestHeaderPayloadDIDTX() {
 	fmt.Println("TestHeaderPayloadDIDTX end")
 }
 
-func (s *txValidatorTestSuite) TestDynamicDoc() {
+func (s *txValidatorTestSuite) TestChangUser1DocAndSaveToJson() {
 	id1 := "did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj"
 	privateKey1Str := "413uivqLEMjPd8bo42K9ic6VXpgYcJLEwB3vefxJDhXJ" //413uivqLEMjPd8bo42K9ic6VXpgYcJLEwB3vefxJDhXJ
 	tx1 := getDIDTx(id1, "create", id11DocByts, privateKey1Str)
@@ -1163,13 +1163,13 @@ func (s *txValidatorTestSuite) TestDynamicDoc() {
 	privateKeyUser1Str := "3z2QFDJE7woSUzL6az9sCB1jkZtzfvEZQtUnYVgQEebS"
 	s.validator.didParam.CustomIDFeeRate = 0
 
-	tx0 := getDIDTxChdDoc(idUser1, "create", idUser1DocByts, privateKeyUser1Str)
-	err3 := s.validator.checkDIDTransaction(tx0, 0, 0)
-	s.NoError(err3)
+	//tx0 := getDIDTxChdDoc(idUser1, "create", idUser1DocByts, privateKeyUser1Str)
+	//err3 := s.validator.checkDIDTransaction(tx0, 0, 0)
+	//s.NoError(err3)
 
-	//txMyChangDOC := getDIDTxChdDoc(idUser1, "create", idUser1HPDocByts, privateKeyUser1Str)
-	//err4 := s.validator.checkDIDTransaction(txMyChangDOC, 0, 0)
-	//s.NoError(err4)
+	txMyChangDOC := getDIDTxChdDoc(idUser1, "create", idUser1HPDocByts, privateKeyUser1Str)
+	err4 := s.validator.checkDIDTransaction(txMyChangDOC, 0, 0)
+	s.NoError(err4)
 }
 
 func outputPayloadToFile(payload types2.Payload, filename string) {

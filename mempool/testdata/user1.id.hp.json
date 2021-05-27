@@ -22,6 +22,7 @@
     "publicKeyBase58" : "qxp7hSiXSoPRJLrCyXz56HGikUgfBjFzKDnfxiwU3cap"
   } ],
   "authentication" : [ "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#key2", "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#key3", "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#primary" ],
+  "authorization" : [ "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#recovery" ],
   "verifiableCredential" : [ {
     "id" : "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#email",
     "type" : [ "BasicProfileCredential", "EmailCredential", "InternetAccountCredential" ],
@@ -58,6 +59,24 @@
       "created" : "2021-01-28T06:38:34Z",
       "verificationMethod" : "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#primary",
       "signature" : "FfCGprFkL2NhsTAyUYJ1MSmX1hghI3HDSPGB6l65TmQASLiHo1wsIwtZ8H77FodfoBL5npnZARyxRIFslLw9Og"
+    }
+  } ],
+  "service" : [ {
+    "id" : "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#carrier",
+    "type" : "CarrierAddress",
+    "serviceEndpoint" : "carrier://X2tDd1ZTErwnHNot8pTdhp7C7Y9FxMPGD8ppiasUT4UsHH2BpF1d"
+  }, {
+    "id" : "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#openid",
+    "type" : "OpenIdConnectVersion1.0Service",
+    "serviceEndpoint" : "https://openid.example.com/"
+  }, {
+    "id" : "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#vcr",
+    "type" : "CredentialRepositoryService",
+    "serviceEndpoint" : "https://did.example.com/credentials",
+    "description": "My public social inbox",
+    "spamCost": {
+      "amount": "0.50",
+      "currency": "USD"
     }
   } ],
   "expires" : "2026-01-28T06:38:34Z",
