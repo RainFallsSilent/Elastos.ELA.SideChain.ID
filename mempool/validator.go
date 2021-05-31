@@ -519,6 +519,19 @@ func (v *validator) getDocProof(Proof interface{}) ([]*id.DocProof, error) {
 		//error
 		return nil, errors.New("isVerificationsMethodsValid Invalid Proof type")
 	}
+
+	for _, proof := range DIDProofArray {
+		if proof.Creator == "" {
+			return nil, errors.New("proof Creator is null")
+		}
+		if proof.Created == "" {
+			return nil, errors.New("proof Created is null")
+		}
+		if proof.SignatureValue == "" {
+			return nil, errors.New("proof SignatureValue is null")
+		}
+	}
+
 	return DIDProofArray, nil
 }
 
@@ -1753,7 +1766,7 @@ func (v *validator) checkCustomizedDID(txn *types.Transaction, height uint32, ma
 	//check Operation must be  format RFC3339
 	_, err := time.Parse(time.RFC3339, customizedDIDPayload.DIDDoc.Expires)
 	if err != nil {
-		return errors.New("invalid Operation")
+		return errors.New("invalid Expires type")
 	}
 	//if this customized did is already exist operation should not be create
 	//if this customized did is not exist operation should not be update
@@ -1869,6 +1882,26 @@ func (v *validator) checkCustomIDOuterProof(txPayload *id.DIDPayload, verifyDoc 
 	return nil
 }
 
+func (v *validator) checkPayloadSyntax(p *id.DIDPayload) error {
+	// check proof
+	if p.Proof.VerificationMethod == "" {
+		return errors.New("proof Creator is nil")
+	}
+	if p.Proof.Signature == "" {
+		return errors.New("proof Created is nil")
+	}
+	if p.DIDDoc != nil {
+		if len(p.DIDDoc.Authentication) == 0 {
+			return errors.New("did doc Authentication is nil")
+		}
+		if p.DIDDoc.Expires == "" {
+			return errors.New("did doc Expires is nil")
+		}
+	}
+
+	return nil
+}
+
 func (v *validator) checkDIDTransaction(txn *types.Transaction, height uint32, mainChainHeight uint32) error {
 	//payload type check
 	if txn.TxType != id.DIDOperation {
@@ -1877,6 +1910,10 @@ func (v *validator) checkDIDTransaction(txn *types.Transaction, height uint32, m
 	p, ok := txn.Payload.(*id.DIDPayload)
 	if !ok {
 		return errors.New("invalid DID payload")
+	}
+
+	if err := v.checkPayloadSyntax(p); err != nil {
+		return err
 	}
 
 	switch p.Header.Operation {
@@ -1952,7 +1989,7 @@ func (v *validator) checkRegisterDID(txn *types.Transaction, height uint32, main
 	}
 	_, err := time.Parse(time.RFC3339, p.DIDDoc.Expires)
 	if err != nil {
-		return errors.New("invalid Operation")
+		return errors.New("invalid Expires type")
 	}
 
 	//check txn fee
